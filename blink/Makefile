@@ -21,9 +21,6 @@ SRCS = \
 	$(SRC_DIR)/main.c \
 	$(SRC_DIR)/startup_stm32f103xb.s
 
-# Если system_stm32f1xx.c находится в другом месте, укажите правильный путь
-# Например: $(SRC_DIR)/Src/system_stm32f1xx.c
-
 # CMSIS headers
 INC_DIRS += $(SRC_DIR)
 
