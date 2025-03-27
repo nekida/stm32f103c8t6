@@ -338,8 +338,8 @@ Discarded input sections
 Memory Configuration
 
 Name             Origin             Length             Attributes
-RAM              0x20000000         0x00005000         xrw
 FLASH            0x08000000         0x00010000         xr
+RAM              0x20000000         0x00005000         xrw
 *default*        0x00000000         0xffffffff
 
 Linker script and memory map
@@ -357,8 +357,6 @@ END GROUP
 LOAD /opt/gcc-arm/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v7-m/nofp/crtend.o
 LOAD /opt/gcc-arm/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v7-m/nofp/crtn.o
                 0x20005000                        _estack = (ORIGIN (RAM) + LENGTH (RAM))
-                0x00000200                        _Min_Heap_Size = 0x200
-                0x00000400                        _Min_Stack_Size = 0x400
 
 .isr_vector     0x08000000      0x10c
                 0x08000000                        . = ALIGN (0x4)
@@ -492,33 +490,29 @@ LOAD /opt/gcc-arm/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v7-m/nofp/crtn.o
 .iplt           0x0800049c        0x0
  .iplt          0x0800049c        0x0 /opt/gcc-arm/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v7-m/nofp/crtbegin.o
 
+.rel.dyn        0x0800049c        0x0
+ .rel.iplt      0x0800049c        0x0 /opt/gcc-arm/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v7-m/nofp/crtbegin.o
+
 .rodata         0x0800049c        0x0
                 0x0800049c                        . = ALIGN (0x4)
  *(.rodata)
  *(.rodata*)
                 0x0800049c                        . = ALIGN (0x4)
 
-.ARM.extab      0x0800049c        0x0
-                0x0800049c                        . = ALIGN (0x4)
+.ARM.extab
  *(.ARM.extab* .gnu.linkonce.armextab.*)
-                0x0800049c                        . = ALIGN (0x4)
 
 .ARM            0x0800049c        0x0
-                0x0800049c                        . = ALIGN (0x4)
                 0x0800049c                        __exidx_start = .
  *(.ARM.exidx*)
                 0x0800049c                        __exidx_end = .
-                0x0800049c                        . = ALIGN (0x4)
 
 .preinit_array  0x0800049c        0x0
-                0x0800049c                        . = ALIGN (0x4)
                 0x0800049c                        PROVIDE (__preinit_array_start = .)
  *(.preinit_array*)
                 0x0800049c                        PROVIDE (__preinit_array_end = .)
-                0x0800049c                        . = ALIGN (0x4)
 
 .init_array     0x0800049c        0x8
-                0x0800049c                        . = ALIGN (0x4)
                 0x0800049c                        PROVIDE (__init_array_start = .)
  *(SORT_BY_NAME(.init_array.*))
  .init_array.00000
@@ -526,20 +520,14 @@ LOAD /opt/gcc-arm/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v7-m/nofp/crtn.o
  *(.init_array*)
  .init_array    0x080004a0        0x4 /opt/gcc-arm/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v7-m/nofp/crtbegin.o
                 0x080004a4                        PROVIDE (__init_array_end = .)
-                0x080004a4                        . = ALIGN (0x4)
 
 .fini_array     0x080004a4        0x4
-                0x080004a4                        . = ALIGN (0x4)
                 0x080004a4                        PROVIDE (__fini_array_start = .)
  *(SORT_BY_NAME(.fini_array.*))
  *(.fini_array*)
  .fini_array    0x080004a4        0x4 /opt/gcc-arm/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v7-m/nofp/crtbegin.o
                 0x080004a8                        PROVIDE (__fini_array_end = .)
-                0x080004a8                        . = ALIGN (0x4)
                 0x080004a8                        _sidata = LOADADDR (.data)
-
-.rel.dyn        0x080004a8        0x0
- .rel.iplt      0x080004a8        0x0 /opt/gcc-arm/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v7-m/nofp/crtbegin.o
 
 .data           0x20000000        0x4 load address 0x080004a8
                 0x20000000                        . = ALIGN (0x4)
@@ -549,8 +537,6 @@ LOAD /opt/gcc-arm/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v7-m/nofp/crtn.o
  .data.__atexit_recursive_mutex
                 0x20000000        0x4 /opt/gcc-arm/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libg.a(libc_a-__call_atexit.o)
                 0x20000000                __atexit_recursive_mutex
- *(.RamFunc)
- *(.RamFunc*)
                 0x20000004                        . = ALIGN (0x4)
                 0x20000004                        _edata = .
 
@@ -563,11 +549,10 @@ LOAD /opt/gcc-arm/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v7-m/nofp/crtn.o
 
 .igot.plt       0x20000004        0x0 load address 0x080004ac
  .igot.plt      0x20000004        0x0 /opt/gcc-arm/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v7-m/nofp/crtbegin.o
-                0x20000004                        . = ALIGN (0x4)
 
 .bss            0x20000004      0x1b4 load address 0x080004ac
+                0x20000004                        . = ALIGN (0x4)
                 0x20000004                        _sbss = .
-                0x20000004                        __bss_start__ = _sbss
  *(.bss)
  *(.bss*)
  .bss.completed.1
@@ -586,18 +571,6 @@ LOAD /opt/gcc-arm/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v7-m/nofp/crtn.o
  *(COMMON)
                 0x200001b8                        . = ALIGN (0x4)
                 0x200001b8                        _ebss = .
-                0x200001b8                        __bss_end__ = _ebss
-
-._user_heap_stack
-                0x200001b8      0x600 load address 0x080004ac
-                0x200001b8                        . = ALIGN (0x8)
-                [!provide]                        PROVIDE (end = .)
-                [!provide]                        PROVIDE (_end = .)
-                0x200003b8                        . = (. + _Min_Heap_Size)
- *fill*         0x200001b8      0x200 
-                0x200007b8                        . = (. + _Min_Stack_Size)
- *fill*         0x200003b8      0x400 
-                0x200007b8                        . = ALIGN (0x8)
 
 /DISCARD/
  libc.a(*)
