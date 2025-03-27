@@ -59,15 +59,6 @@
   \ingroup Cortex_M3
   @{
  */
-
-#include "cmsis_version.h"
-
-/*  CMSIS CM3 definitions */
-#define __CM3_CMSIS_VERSION_MAIN  (__CM_CMSIS_VERSION_MAIN)              /*!< \deprecated [31:16] CMSIS HAL main version */
-#define __CM3_CMSIS_VERSION_SUB   (__CM_CMSIS_VERSION_SUB)               /*!< \deprecated [15:0]  CMSIS HAL sub version */
-#define __CM3_CMSIS_VERSION       ((__CM3_CMSIS_VERSION_MAIN << 16U) | \
-                                    __CM3_CMSIS_VERSION_SUB           )  /*!< \deprecated CMSIS HAL version number */
-
 #define __CORTEX_M                (3U)                                   /*!< Cortex-M Core */
 
 /** __FPU_USED indicates whether an FPU is used or not.
@@ -112,7 +103,7 @@
 
 #endif
 
-#include "cmsis_compiler.h"               /* CMSIS compiler specific defines */
+#include "cmsis_gcc.h"
 
 
 #ifdef __cplusplus
