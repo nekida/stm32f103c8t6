@@ -1,6 +1,7 @@
 #include "stm32f103xb.h"
 
 #include <stdint.h>
+#include <stddef.h>
 
 static void error_handler (void)
 {
@@ -74,24 +75,46 @@ static inline void set_sys_clock_to_72MHz (void)
 
 }
 
+void clocking_port (uint32_t io_port_reset, uint32_t clock_en)
+{
+    RCC->APB2RSTR |= io_port_reset;
+    RCC->APB2RSTR &= ~io_port_reset;
+
+    RCC->APB2ENR |= clock_en;
+}
+
+void config_pin (GPIO_TypeDef * port, uint8_t pin, uint32_t reg_reset, uint32_t reg_set)
+{
+    const uint8_t max_num_pin = 15;
+    if (port == NULL || pin > max_num_pin)
+        return;
+
+    volatile uint32_t * reg = NULL;
+    const uint8_t num_pin_on_reg = 8;
+    if (pin < num_pin_on_reg)
+        reg = &port->CRL;
+    else
+        reg = &port->CRH;
+
+    *reg &= ~reg_reset;
+    *reg |= reg_set; 
+}
+
 int main (void)
 {
     set_sys_clock_to_72MHz ();
+    clocking_port (RCC_APB2RSTR_IOPBRST, RCC_APB2ENR_IOPBEN);
+    // led
+    uint8_t led_pin = 2;
+    config_pin (GPIOB, led_pin, GPIO_CRL_MODE2 | GPIO_CRL_CNF2, GPIO_CRL_MODE2_0);
+    // debug
+    uint8_t debug_pin = 1;
+    config_pin (GPIOB, debug_pin, GPIO_CRL_MODE1 | GPIO_CRL_CNF1, GPIO_CRL_MODE1_0);
 
-    RCC->APB2RSTR |= RCC_APB2RSTR_IOPBRST;
-    RCC->APB2RSTR &= ~RCC_APB2RSTR_IOPBRST;
-    
-    RCC->APB2ENR |= RCC_APB2ENR_IOPBEN;
-
-    GPIOB->CRL &= ~(GPIO_CRL_MODE2 | GPIO_CRL_CNF2);
-    GPIOB->CRL |= GPIO_CRL_MODE2_0;
-
-    GPIOB->CRL &= ~(GPIO_CRL_MODE1 | GPIO_CRL_CNF1);
-    GPIOB->CRL |= GPIO_CRL_MODE1_0;
-
+    const size_t delay = 250000;
     while (1) {
         GPIOB->ODR ^= GPIO_ODR_ODR2;
         GPIOB->ODR ^= GPIO_ODR_ODR1;
-        for (volatile uint32_t i = 0; i < 250000; ++i);
+        for (volatile size_t i = 0; i < delay; ++i);
     }
 }
