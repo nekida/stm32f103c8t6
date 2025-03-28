@@ -19,8 +19,10 @@ static inline void flash_config (void)
     FLASH->ACR |= FLASH_ACR_LATENCY_2;
 }
 
-static inline void set_sys_clock_to_64MHz (void)
+static inline void set_sys_clock_to_72MHz (void)
 {
+    flash_config ();
+
     const uint32_t timeout_val = 1000;
     RCC->CR |= RCC_CR_HSEON;
     uint32_t timeout = timeout_val;
@@ -51,8 +53,8 @@ static inline void set_sys_clock_to_64MHz (void)
 
     // PLL config
     RCC->CFGR &= ~(RCC_CFGR_PLLSRC | RCC_CFGR_PLLXTPRE | RCC_CFGR_PLLMULL);
-    // HSE 8 MHz -> PLL x 8 -> 64 MHz
-    RCC->CFGR |= (RCC_CFGR_PLLSRC | RCC_CFGR_PLLMULL8);
+    // HSE 8 MHz -> PLL x 9 -> 72 MHz
+    RCC->CFGR |= (RCC_CFGR_PLLSRC | RCC_CFGR_PLLMULL9);
     // Enable PLL
     RCC->CR |= RCC_CR_PLLON;
     timeout = timeout_val;
@@ -70,23 +72,26 @@ static inline void set_sys_clock_to_64MHz (void)
     if (timeout == 0)
         error_handler ();
 
-    flash_config ();
 }
 
 int main (void)
 {
-    set_sys_clock_to_64MHz ();
+    set_sys_clock_to_72MHz ();
 
-    RCC->APB2RSTR |= RCC_APB2RSTR_IOPCRST;
-    RCC->APB2RSTR &= ~RCC_APB2RSTR_IOPCRST;
+    RCC->APB2RSTR |= RCC_APB2RSTR_IOPBRST;
+    RCC->APB2RSTR &= ~RCC_APB2RSTR_IOPBRST;
     
-    RCC->APB2ENR |= RCC_APB2ENR_IOPCEN;
+    RCC->APB2ENR |= RCC_APB2ENR_IOPBEN;
 
-    GPIOC->CRH &= ~(GPIO_CRH_MODE13 | GPIO_CRH_CNF13);
-    GPIOC->CRH |= GPIO_CRH_MODE13_0;
+    GPIOB->CRL &= ~(GPIO_CRL_MODE2 | GPIO_CRL_CNF2);
+    GPIOB->CRL |= GPIO_CRL_MODE2_0;
+
+    GPIOB->CRL &= ~(GPIO_CRL_MODE1 | GPIO_CRL_CNF1);
+    GPIOB->CRL |= GPIO_CRL_MODE1_0;
 
     while (1) {
-        GPIOC->ODR ^= GPIO_ODR_ODR13;
+        GPIOB->ODR ^= GPIO_ODR_ODR2;
+        GPIOB->ODR ^= GPIO_ODR_ODR1;
         for (volatile uint32_t i = 0; i < 250000; ++i);
     }
 }
