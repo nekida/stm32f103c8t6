@@ -11,6 +11,7 @@
 
 static void error_handler (void)
 {
+    __disable_irq ();
     while (1) {
         // Handle error
     }
@@ -33,28 +34,38 @@ int main (void)
     clocking_port (RCC_APB2RSTR_IOPARST, RCC_APB2ENR_IOPAEN);
 
     // led
-    uint8_t led_pin = 2;
+    const uint8_t led_pin = 2;
     config_pin (GPIOB, led_pin, GPIO_CRL_MODE2 | GPIO_CRL_CNF2, GPIO_CRL_MODE2_0);
     // debug
-    uint8_t debug_pin = 1;
+    const uint8_t debug_pin = 1;
     config_pin (GPIOB, debug_pin, GPIO_CRL_MODE1 | GPIO_CRL_CNF1, GPIO_CRL_MODE1_0);
     // button
-    uint8_t button_pin = 0;
+    const uint8_t button_pin = 0;
     config_pin (GPIOA, button_pin, GPIO_CRL_MODE0 | GPIO_CRL_CNF0, GPIO_CRL_CNF0_1);
 
     __enable_irq ();
 
-    debounce_filter_init (GPIOA, button_pin, HIGH);
-    while (1) {
-        if (is_button_pressed ()) {
-            GPIOB->ODR ^= GPIO_ODR_ODR2;
-            GPIOB->ODR ^= GPIO_ODR_ODR1;
+    debounce_pin_t btn;
+    debounce_init (&btn, GPIOA, button_pin);
+    bool led_state = false;
+    while (1) {       
+        if (debounce_update (&btn, SysTick->VAL)) {
+            if (btn.stable_state == false) {
+                led_state = !led_state;
+                
+                if (led_state) {
+                    GPIOB->ODR |= GPIO_ODR_ODR2;
+                    GPIOB->ODR |= GPIO_ODR_ODR1;
+                } else {
+                    GPIOB->ODR &= ~GPIO_ODR_ODR2;
+                    GPIOB->ODR &= ~GPIO_ODR_ODR1;
+                }
+            }
         }
     }
 }
 
 void SysTick_Handler (void)
 {
-    volatile uint32_t * cnt = get_debounce_cnt ();
-    *cnt++;
+    __NOP();
 }

@@ -2,67 +2,44 @@
 
 #include <stddef.h>
 
-#define DEBOUNCE_TIME_MS (5)
+#include "debounce.h"
+#include <stdbool.h>
 
-static uint32_t cnt = 0;
+#define DEBOUNCE_TIME_MS (20)
 
-static bool is_init = false;
+static const uint8_t bit = 1;
 
-static GPIO_TypeDef * port;
-static uint8_t pin;
-static level_t level;
-
-typedef enum {
-    BTN_STATE_RELEASED = 0,
-    BTN_STATE_PRESSED,
-    BTN_STATE_DEBOUNCE
-} button_state_t;
-
-void debounce_filter_init (GPIO_TypeDef * debounce_port, uint8_t debounce_pin, level_t debounce_level)
+void debounce_init (debounce_pin_t * const debounce_pin, const GPIO_TypeDef * const port, uint8_t pin)
 {
-    port = debounce_port;
-    pin = debounce_pin;
-    level = debounce_level;
-    is_init = true;
+    if (debounce_pin == NULL || port == NULL || pin > 15)
+        return;
+
+    debounce_pin->port = port;
+    debounce_pin->pin = pin;
+    debounce_pin->last_state = (port->IDR & (bit << pin)) ? true : false;
+    debounce_pin->stable_state = debounce_pin->last_state;
+    debounce_pin->last_change_time = 0;
 }
 
-button_state_t button_state = BTN_STATE_RELEASED;
-uint32_t last_debounce_time = 0;
-
-bool is_button_pressed (void)
+bool debounce_update (debounce_pin_t * const debounce_pin, uint32_t current_time)
 {
-    if (!is_init)
+    if (debounce_pin == NULL)
         return false;
 
-    uint8_t current_state = port->IDR & (1 << pin);
-
-    switch (button_state) {
-        case BTN_STATE_RELEASED:
-            if (current_state == level) {
-                button_state = BTN_STATE_DEBOUNCE;
-                last_debounce_time = cnt;
-            }
-            break;
-
-        case BTN_STATE_DEBOUNCE:
-            if (cnt - last_debounce_time > DEBOUNCE_TIME_MS) {
-                if (current_state == level) {
-                    button_state = BTN_STATE_PRESSED;
-                    return true;
-                } else
-                    button_state = BTN_STATE_RELEASED;
-            }
-            break;
-
-        case BTN_STATE_PRESSED:
-            if (current_state != level)
-                button_state = BTN_STATE_RELEASED;
-            break;
+    bool current_state = (debounce_pin->port->IDR & (bit << debounce_pin->pin)) ? true : false;
+  
+    if (current_state != debounce_pin->last_state) {
+        debounce_pin->last_change_time = current_time;
+        debounce_pin->last_state = current_state;
+        return false;
     }
+  
+    if (current_state != debounce_pin->stable_state) {
+        if ((current_time - debounce_pin->last_change_time) >= DEBOUNCE_TIME_MS) {
+            debounce_pin->stable_state = current_state;
+            return true;
+        }
+    }
+  
     return false;
-}
-
-uint32_t * get_debounce_cnt (void)
-{
-    return &cnt;
 }

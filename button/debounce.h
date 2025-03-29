@@ -6,13 +6,15 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-typedef enum level_e {
-    LOW = 0,
-    HIGH = 1
-} level_t;
+typedef struct debounce_pin_s {
+    const GPIO_TypeDef * port;
+    uint8_t pin;
+    bool last_state;
+    bool stable_state;
+    uint32_t last_change_time;
+} debounce_pin_t;
 
-void debounce_filter_init (GPIO_TypeDef * debounce_port, uint8_t debounce_pin, level_t debounce_level);
-bool is_button_pressed (void);
-uint32_t * get_debounce_cnt (void);
+void debounce_init (debounce_pin_t * const debounce_pin, const GPIO_TypeDef * const port, uint8_t pin);
+bool debounce_update (debounce_pin_t * const debounce_pin, uint32_t current_time);
 
 #endif // DEBOUNCE_H
